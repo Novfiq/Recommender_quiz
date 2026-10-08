@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Recommender System - Live Test</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;display:flex;justify-content:center;align-items:center;color:#e8ecff;background:#0b1020;overflow-x:hidden}
+.blob{position:fixed;border-radius:50%;filter:blur(80px);opacity:.45;z-index:0;animation:float 14s ease-in-out infinite}
+.b1{width:420px;height:420px;background:#6366f1;top:-100px;left:-100px}
+.b2{width:380px;height:380px;background:#ec4899;bottom:-120px;right:-80px;animation-delay:-5s}
+.b3{width:300px;height:300px;background:#06b6d4;top:40%;left:55%;animation-delay:-9s}
+@keyframes float{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(60px,-50px) scale(1.15)}}
+.card{position:relative;z-index:1;width:min(780px,94%);margin:20px 0;background:rgba(255,255,255,.07);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.15);border-radius:24px;padding:28px;box-shadow:0 20px 60px #0008;animation:pop .6s cubic-bezier(.2,1.3,.4,1)}
+@keyframes pop{from{opacity:0;transform:scale(.85) translateY(30px)}to{opacity:1;transform:none}}
+h1{margin:0 0 6px;text-align:center;font-size:28px;background:linear-gradient(90deg,#a5b4fc,#f9a8d4,#67e8f9);-webkit-background-clip:text;background-clip:text;color:transparent}
+.info{text-align:center;color:#a5b0d6;margin-bottom:20px}
+.hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:14px;color:#a5b0d6;flex-wrap:wrap;gap:8px}
+.chip{background:rgba(255,255,255,.1);padding:6px 14px;border-radius:999px}
+.rollbox{text-align:center;margin:6px 0 16px}
+.rolllabel{font-size:13px;letter-spacing:3px;color:#a5b0d6}
+#roll{font-size:64px;font-weight:900;color:#fde68a;text-shadow:0 0 30px #f59e0b88;font-variant-numeric:tabular-nums;line-height:1.1}
+#roll.spin{animation:blur .1s linear infinite}
+#roll.land{animation:land .6s ease}
+@keyframes blur{50%{opacity:.7;transform:translateY(-3px)}}
+@keyframes land{0%{transform:scale(2);opacity:.3}60%{transform:scale(.9)}100%{transform:scale(1)}}
+.timer{height:8px;background:rgba(255,255,255,.12);border-radius:8px;overflow:hidden;margin-bottom:16px}
+#bar{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);background-size:300% 100%;border-radius:8px;transform-origin:left}
+.question{font-size:21px;font-weight:700;line-height:1.45;margin-bottom:18px;animation:slideIn .5s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+.option{display:block;width:100%;padding:15px 16px;margin:10px 0;border:2px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:14px;text-align:left;font-size:16px;cursor:pointer;transition:.2s;opacity:0;animation:optIn .45s ease forwards}
+@keyframes optIn{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
+.option:hover:not(:disabled){background:rgba(129,140,248,.25);border-color:#818cf8;transform:translateX(6px) scale(1.01)}
+.option:disabled{cursor:default}
+.option.correct{background:rgba(34,197,94,.28);border-color:#22c55e;animation:glow .8s ease;opacity:1}
+.option.wrong{background:rgba(239,68,68,.28);border-color:#ef4444;animation:shake .5s ease;opacity:1}
+@keyframes glow{0%{box-shadow:0 0 0 0 #22c55e}50%{box-shadow:0 0 40px 8px #22c55e88;transform:scale(1.04)}100%{box-shadow:0 0 0 0 #22c55e00}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+.btn{display:block;margin:20px auto 0;padding:13px 34px;border:0;border-radius:12px;background:linear-gradient(90deg,#6366f1,#ec4899);color:#fff;font-size:16px;font-weight:700;cursor:pointer;transition:.2s;box-shadow:0 8px 24px #6366f188}
+.btn:hover{transform:translateY(-3px) scale(1.04)}
+#next{display:none;animation:pop .4s ease}
+input{padding:12px;border-radius:10px;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:18px;width:110px;text-align:center}
+#start,#result{text-align:center}
+.score{font-size:64px;font-weight:900;color:#fde68a;animation:land .8s ease}
+.encourage{position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);font-size:clamp(30px,7vw,60px);font-weight:900;color:#4ade80;z-index:20;pointer-events:none;text-shadow:0 4px 24px #22c55e;animation:enc 1s ease forwards}
+.oops{color:#f87171;text-shadow:0 4px 24px #ef4444}
+@keyframes enc{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}35%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}100%{opacity:0;transform:translate(-50%,-85%) scale(1)}}
+.confetti{position:fixed;width:9px;height:15px;z-index:19;pointer-events:none;animation:fall 1.2s ease-out forwards}
+@keyframes fall{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(620deg)}}
+.flash{animation:redflash .5s}
+@keyframes redflash{50%{box-shadow:0 0 60px #ef4444aa}}
+
+.row{display:flex;align-items:center;gap:12px;padding:11px 14px;margin:8px 0;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);opacity:0;animation:optIn .45s ease forwards}
+.row.me{border-color:#fde68a;background:rgba(253,230,138,.15)}
+.rk{font-size:22px;font-weight:900;width:46px;text-align:center}
+.nm{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nm small{display:block;color:#a5b0d6;font-weight:400}
+.pt{font-weight:900;color:#fde68a;font-size:18px;text-align:right}
+.pt small{display:block;color:#a5b0d6;font-weight:400;font-size:12px}
+.row.top1{animation:optIn .45s ease forwards,gold 2s ease-in-out infinite}
+@keyframes gold{50%{box-shadow:0 0 28px #fbbf24aa}}
+input.t{width:100%;margin:6px 0 12px;text-align:left;font-size:17px}
+.note{font-size:13px;color:#fca5a5;margin-top:12px}
+.btn.sec{background:rgba(255,255,255,.12);box-shadow:none}
+.err{color:#f87171;margin-top:8px;min-height:20px}
+</style></head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div class="card" id="card">
+ <h1>⚡ Recommender System Live Test</h1>
+ <div class="info" id="info">Fast + Correct = Top Rank 🏆</div>
+
+ <div id="login" style="text-align:center">
+  <div style="text-align:left;max-width:380px;margin:auto">
+   <label>Name</label><input class="t" id="name" maxlength="30" placeholder="Your name">
+   <label>Roll Number</label><input class="t" id="rno" maxlength="20" placeholder="e.g. 23ADC045">
+  </div>
+  <div class="err" id="err"></div>
+  <button class="btn" onclick="begin()">Start Test 🚀</button>
+  <button class="btn sec" onclick="hostLogin()">👑 Host Login (teacher)</button>
+  <p style="color:#a5b0d6;font-size:13px">One attempt per roll number. <span id="rules"></span></p>
+  <div class="note" id="setup" style="display:none">⚠ Teacher: DB_URL not set, so leaderboard is saved on this device only.</div>
+ </div>
+
+ <div id="quiz" style="display:none">
+  <div class="hud"><span class="chip" id="qno"></span><span class="chip" id="streak"></span><span class="chip" id="sc"></span></div>
+  <div class="timer"><div id="bar"></div></div>
+  <div class="question" id="question"></div>
+  <div id="options"></div>
+ </div>
+
+ <div id="result" style="display:none;text-align:center">
+  <h2 id="rh">Test Completed 🎉</h2>
+  <div class="score" id="score"></div>
+  <p id="summary"></p>
+  <div id="host" style="display:none"><button class="btn sec" style="display:inline-block" onclick="csv()">⬇ Download CSV</button> <button class="btn sec" style="display:inline-block" onclick="resetAll()">🗑 Reset all</button></div>
+  <div id="board"></div>
+  <button class="btn sec" id="back" style="display:none" onclick="goLogin()">← Back</button>
+ </div>
+</div>
+
+<script>
+/* ===== TEACHER SETTINGS ===== */
+const DB_URL="";      // paste Firebase Realtime Database URL here, e.g. "https://myquiz-default-rtdb.firebaseio.com"
+const COUNT=40;       // number of questions in the test
+const TIME=30;        // seconds per question
+const HOST_PIN="1234"; // host password - change it!
+const SEED=2026;      // change seed to get a different question set
+/* ============================ */
+
+const Q=[
+// ---------- UNIT I ----------
+["In user-based CF with Pearson correlation, why are ratings mean-centered first?",["To cancel each user's own generous or harsh rating habit","To force every user's ratings to sum to exactly one","To reduce the neighbour set down to a single peer","To turn explicit ratings into binary click signals"],0],
+["Users u=(5,0,3) and v=(4,0,3), with 0 meaning unrated treated as zero. Cosine similarity is closest to?",["0.50","0.75","0.99","0.29"],2],
+["A 1000-user × 500-item rating matrix is factorized with k = 10 latent factors. How many parameters are learned (ignoring biases)?",["5,000 parameters","10,000 parameters","500,000 parameters","15,000 parameters"],3],
+["Truncated SVD keeping the top-k singular values gives which guarantee?",["The best rank-k approximation in Frobenius norm","The exact original matrix with no loss at all","The sparsest possible factor matrices of rank k","A non-negative factorization of every matrix"],0],
+["Why is item-based CF often preferred when users far outnumber items?",["It needs no rating data from any active user","Item similarities are more stable and precomputable","It always achieves lower RMSE than latent models","It avoids computing any similarity measure at all"],1],
+["When a regression tree is built for rating prediction, which split is chosen at each node?",["The one giving the alphabetically first feature","The one splitting users into equal-sized groups","The one that makes the tree as deep as possible","The one that most reduces variance in child nodes"],3],
+["In latent factor models, which term mainly controls overfitting on sparse data?",["A larger number of training epochs","A penalty on the size of factor vectors","A smaller number of observed ratings","A random shuffle of the user ordering"],1],
+["What is the main efficiency gain of a cluster-based CF model?",["Predictions use cluster summaries, not every user","Every user lands in exactly one cluster of size one","Rating prediction no longer needs any rating data","Similarity is never computed during training either"],0],
+["In a bipartite user-item graph, a path user → item → user → item suggests what?",["The final item is a duplicate of the first","The first user must be the same as the second","The final item is liked by a similar user","The graph must contain exactly one cycle only"],2],
+// ---------- UNIT II ----------
+["In TF-IDF, a term that appears in EVERY item of the catalog gets an IDF of?",["Exactly zero, since log(N/N) = 0","The maximum value in the vocabulary","A very large positive number overall","A negative infinity that is then clipped"],0],
+["A brand-new item has zero ratings. Which approach can still recommend it on day one?",["Item-based CF using rating vectors","User-based CF using neighbour ratings","Content-based filtering using its attributes","Matrix factorization using its latent vector"],2],
+["Which weakness is most typical of purely content-based recommenders?",["Over-specialization on already-liked item types","Complete failure for every brand-new user","Dependence on other users' rating histories","Inability to use any item description at all"],0],
+["In a Rocchio-style profile, how is the user profile vector typically built?",["The sum of all item IDs the user has opened","Centroid of liked items minus centroid of disliked","A random sample of the catalog's feature vectors","The most recent item vector and nothing earlier"],1],
+["Naive Bayes classification for content-based filtering assumes what?",["Every feature is independent of the class label","Features are conditionally independent given the class","The class prior is always exactly 0.5 for each","Features must be numeric and normally distributed"],1],
+["Which hybrid design picks ONE recommender per situation, e.g. by data availability?",["Weighted hybrid","Cascade hybrid","Switching hybrid","Feature-combination hybrid"],2],
+["In a cascade hybrid, what role does the second recommender play?",["Refines or breaks ties in the first's output","Replaces the first recommender completely","Averages scores with the first recommender","Trains only on the first recommender's errors"],0],
+["Meta-level hybrid differs from feature augmentation because the first model's ____ feeds the second.",["raw predicted ratings only","learned model itself, not its output","list of top-N recommended items","timestamp of its last training run"],1],
+["In a weighted hybrid, the final score of an item is computed as?",["The score from the single best component","The product of the ranks from each component","A weighted combination of component scores","The component score with the earliest timestamp"],2],
+// ---------- UNIT III ----------
+["Prediction errors on four ratings are 1, 1, 1, 3. Which statement is true?",["RMSE ≈ 1.73 is larger than MAE = 1.5","RMSE = MAE = 1.5 since the mean is same","RMSE ≈ 1.00 is smaller than MAE = 1.5","RMSE = 1.5 is larger than MAE ≈ 1.73"],0],
+["Why does RMSE penalize one big error more than MAE?",["Because RMSE ignores all the small errors","Because errors are squared before averaging","Because RMSE only uses the largest error","Because MAE is computed on the log scale"],1],
+["Catalog coverage of a recommender is best described as?",["Share of users who rated at least one item","Average predicted rating over every user","Share of items that are ever recommended","Fraction of ratings that fall in the test set"],2],
+["A recommendation is relevant AND surprising to the user. This property is best called?",["Serendipity","Novelty","Coverage","Confidence"],0],
+["How does novelty differ from serendipity?",["Novelty must also be relevant to the user","Novelty only needs the item to be unknown","Novelty is measured only by RMSE values","Novelty applies only to brand-new catalog items"],1],
+["Diversity of a top-N list is commonly computed as?",["The total number of users who saw it","The highest similarity among list items","Average pairwise dissimilarity among the items","Number of items rated above 4 in the list"],2],
+["The Netflix Prize was won by a team reaching what target over Cinematch?",["10% improvement in RMSE","50% improvement in MAE","1% improvement in coverage","25% improvement in precision"],0],
+["Kendall's tau compares predicted and true rankings by counting what?",["Items that appear in both top-N lists","Concordant minus discordant item pairs","The squared rating gap for every item","Users who agree on the very top item"],1],
+["Utility-based ranking evaluation (e.g. NDCG style) mainly assumes what?",["All positions count exactly the same","Only the last item in the list matters","Higher-ranked positions are worth more","Only the number of items listed matters"],2],
+["Why must held-out test ratings never be used during model training?",["It would give optimistically biased accuracy","It would make the training set too small","It would force the model to use more factors","It would make the similarity matrix singular"],0],
+// ---------- UNIT IV ----------
+["In context-aware recommendation, what is PRE-filtering?",["Re-ranking the final list using the context","Selecting data matching the context before modelling","Removing users who have no ratings from the model","Filtering items after the model has scored them"],1],
+["Post-filtering in a context-aware recommender means?",["Adjusting the produced list using context afterwards","Dropping contextual data before any training step","Training a separate model for every single user","Replacing the ratings with their context labels"],0],
+["Why does Time-SVD++ let item biases change with time?",["Item popularity and perception drift over time","Items are physically deleted from the catalog","Item IDs are re-assigned at every new epoch","The number of latent factors shrinks over time"],0],
+["A first-order Markov model of user sessions assumes the next item depends on?",["All items the user ever consumed before","Only the current item or state, not older ones","Only the item with the highest global rating","Only the item the user consumed at the start"],1],
+["How does sequential pattern mining differ from plain frequent itemset mining?",["It ignores how often a pattern occurs","It works only with numeric rating values","It respects the order of events in the data","It requires every pattern to be of length one"],2],
+["In location-aware recommenders, 'travel locality' refers to what?",["Users prefer items from their own home region","Users' activity tends to stay within a travel range","Items are recommended only inside one building","Users' ratings always decay with the clock time"],1],
+// ---------- UNIT V ----------
+["In PageRank, why is a damping (teleport) factor needed?",["To handle dead ends and spider traps in the web","To make every page end with identical PageRank","To remove all outgoing links from popular pages","To count only links from pages of the same site"],0],
+["The Katz measure between two nodes is computed from?",["Only the shortest path between those nodes","All paths, with longer paths damped by β^length","Only the count of their direct common neighbours","The degree of the node with the larger degree"],1],
+["In a random walk with restart, node proximity is read from?",["The number of edges leaving the source node","The longest path found from the source node","The steady-state visit probability of each node","The first node reached after exactly one step"],2],
+["Linear Threshold model: threshold is 0.6 and active neighbours have weights 0.25 and 0.30. What happens?",["The node stays inactive since 0.55 < 0.6","The node activates since 0.55 is close enough","The node activates since two neighbours are active","The node activates only after the next time step"],0],
+["In the Independent Cascade model, how many chances does an active node get to activate each inactive neighbour?",["Unlimited chances until the neighbour is active","Exactly one single chance, with a probability","One chance per neighbour that is already active","None, since activation is purely deterministic"],1],
+["Softmax over three equal logits (2, 2, 2) gives probabilities of?",["About 0.33 each, summing to 1","About 0.67 each, summing to 2","Exactly 2 each, same as the logits","Exactly 0 for all and 1 for the last"],0],
+["Training softmax over millions of items is costly. A common fix in neural recommenders is?",["Removing the softmax and predicting raw ratings","Using only the first item of the catalog","Sampling negative items instead of the full sum","Reducing the embedding size to exactly one"],2]
+];
+
+const $=id=>document.getElementById(id);
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function seededShuffle(arr,seed){const r=rng(seed);return arr.map(x=>[r(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1])}
+const shuffle=a=>a.map(x=>[Math.random(),x]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+
+let pool=[],idx=0,points=0,correct=0,streak=0,totalMs=0,locked=true,tmr=null,qStart=0,me={},boardTimer=null;
+$('rules').textContent=`${COUNT} questions · ${TIME}s each · faster correct answers = more points`;
+if(!DB_URL)$('setup').style.display='block';
+
+const keyOf=r=>r.toUpperCase().replace(/[^A-Z0-9_-]/g,'_');
+async function dbGet(key){
+  if(!DB_URL){return JSON.parse(localStorage.getItem('rq_'+key)||'null')}
+  const r=await fetch(`${DB_URL}/results/${key}.json`);return r.json();
+}
+async function dbPut(key,val){
+  if(!DB_URL){localStorage.setItem('rq_'+key,JSON.stringify(val));return}
+  const r=await fetch(`${DB_URL}/results/${key}.json`,{method:'PUT',body:JSON.stringify(val)});
+  if(!r.ok)throw new Error('save failed');
+}
+async function dbAll(){
+  if(!DB_URL){const o={};Object.keys(localStorage).filter(k=>k.startsWith('rq_')).forEach(k=>o[k]=JSON.parse(localStorage[k]));return o}
+  const r=await fetch(`${DB_URL}/results.json`);return (await r.json())||{};
+}
+
+async function begin(){
+  const name=$('name').value.trim(),roll=$('rno').value.trim();
+  $('err').textContent='';
+  if(name.length<2||roll.length<2){$('err').textContent='Enter your name and roll number';return}
+  try{
+    const old=await dbGet(keyOf(roll));
+    if(old){$('err').textContent='This roll number has already taken the test.';return}
+  }catch(e){$('err').textContent='Cannot reach server. Check internet and try again.';return}
+  me={name,roll,key:keyOf(roll)};
+  pool=seededShuffle(Q,SEED).slice(0,COUNT);
+  idx=0;points=0;correct=0;streak=0;totalMs=0;
+  $('login').style.display='none';$('quiz').style.display='block';
+  showQuestion();
+}
+function showQuestion(){
+  locked=true;cancelAnimationFrame(tmr);
+  const q=pool[idx];
+  $('qno').textContent=`Question ${idx+1} / ${pool.length}`;
+  $('sc').textContent='⭐ '+points;$('streak').textContent='🔥 '+streak;
+  $('bar').style.transform='scaleX(1)';
+  $('question').textContent=q[0];
+  $('question').style.animation='none';void $('question').offsetWidth;$('question').style.animation='';
+  $('options').innerHTML='';
+  shuffle(q[1].map((t,i)=>({t,ok:i===q[2]}))).forEach((o,i)=>{
+    const b=document.createElement('button');b.className='option';
+    b.textContent=String.fromCharCode(65+i)+'. '+o.t;b.dataset.ok=o.ok?1:0;
+    b.style.animationDelay=(i*0.1)+'s';b.onclick=()=>choose(b,o.ok);$('options').appendChild(b);
+  });
+  qStart=performance.now();locked=false;
+  (function tick(now){
+    const p=Math.min(1,((now||performance.now())-qStart)/(TIME*1000));
+    $('bar').style.transform=`scaleX(${1-p})`;$('bar').style.backgroundPosition=(p*100)+'% 0';
+    if(p>=1){if(!locked)choose(null,false)}else tmr=requestAnimationFrame(tick);
+  })(qStart);
+}
+function choose(btn,ok){
+  if(locked)return;locked=true;cancelAnimationFrame(tmr);
+  const el=Math.min(performance.now()-qStart,TIME*1000);totalMs+=el;
+  const bs=[...document.querySelectorAll('.option')];bs.forEach(b=>b.disabled=true);
+  if(ok){
+    const gain=100+Math.round(100*(1-el/(TIME*1000)));
+    points+=gain;correct++;streak++;btn.classList.add('correct');celebrate('+'+gain+' ⚡');
+  }else{
+    streak=0;if(btn)btn.classList.add('wrong');
+    bs.find(b=>b.dataset.ok==='1').classList.add('correct');
+    msg(btn?'Oops! 😅':"Time's up! ⏰",true);
+  }
+  $('sc').textContent='⭐ '+points;$('streak').textContent='🔥 '+streak;
+  setTimeout(()=>{idx++;idx>=pool.length?finish():showQuestion()},1400);
+}
+function msg(t,bad){const e=document.createElement('div');e.className='encourage'+(bad?' oops':'');e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),1000)}
+function celebrate(t){
+  msg(t);
+  for(let i=0;i<30;i++){const c=document.createElement('div');c.className='confetti';
+    c.style.left=(50+Math.random()*10-5)+'%';c.style.top='43%';
+    c.style.setProperty('--dx',(Math.random()*480-240)+'px');c.style.setProperty('--dy',(Math.random()*480+60)+'px');
+    c.style.background=`hsl(${Math.random()*360},85%,60%)`;document.body.appendChild(c);setTimeout(()=>c.remove(),1250)}
+}
+async function finish(){
+  $('quiz').style.display='none';
+  $('result').style.display='block';$('rh').textContent='Test Completed 🎉';
+  $('score').textContent=points+' pts';
+  $('summary').textContent=`${correct} / ${pool.length} correct · ${(totalMs/1000).toFixed(1)}s total · saving…`;
+  try{
+    await dbPut(me.key,{name:me.name,roll:me.roll,points,correct,total:pool.length,ms:Math.round(totalMs)});
+    $('summary').textContent=`${correct} / ${pool.length} correct · ${(totalMs/1000).toFixed(1)}s total · saved ✅`;
+  }catch(e){$('summary').textContent+=' ⚠ could not save, tell your teacher.'}
+  for(let i=0;i<4;i++)setTimeout(()=>celebrate('🏆'),i*400);
+  myRank();
+}
+let isHost=false;
+function hostLogin(){
+  const p=prompt('Enter host PIN');
+  if(p===null)return;
+  if(p!==HOST_PIN){$('err').textContent='Wrong host PIN';return}
+  isHost=true;$('err').textContent='';
+  $('login').style.display='none';$('result').style.display='block';
+  $('rh').textContent='👑 Host Dashboard';$('score').textContent='';$('summary').textContent='';
+  $('back').style.display='block';$('host').style.display='block';
+  renderBoard();clearInterval(boardTimer);boardTimer=setInterval(renderBoard,4000);
+}
+async function myRank(){
+  try{
+    const all=Object.values(await dbAll()).filter(x=>x&&typeof x.points==='number')
+      .sort((a,b)=>b.points-a.points||a.ms-b.ms);
+    const pos=all.findIndex(x=>keyOf(x.roll)===me.key)+1;
+    if(pos)$('summary').textContent+=` · Current rank #${pos} of ${all.length} 🏅`;
+  }catch(e){}
+}
+function goLogin(){clearInterval(boardTimer);isHost=false;$('host').style.display='none';$('board').innerHTML='';$('result').style.display='none';$('login').style.display='block'}
+async function csv(){
+  const all=Object.values(await dbAll()).filter(x=>x&&typeof x.points==='number').sort((a,b)=>b.points-a.points||a.ms-b.ms);
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';
+  const rows=['Rank,Name,Roll,Points,Correct,Total,Seconds'].concat(all.map((x,i)=>[i+1,q(x.name),q(x.roll),x.points,x.correct,x.total,(x.ms/1000).toFixed(1)].join(',')));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
+  a.download='quiz_results.csv';document.body.appendChild(a);a.click();a.remove();
+}
+async function resetAll(){
+  if(!confirm('Delete ALL results? This cannot be undone.'))return;
+  if(DB_URL)await fetch(`${DB_URL}/results.json`,{method:'DELETE'});
+  else Object.keys(localStorage).filter(k=>k.startsWith('rq_')).forEach(k=>localStorage.removeItem(k));
+  renderBoard();
+}
+async function renderBoard(){
+  let all;try{all=await dbAll()}catch(e){return}
+  const list=Object.values(all).filter(x=>x&&typeof x.points==='number')
+    .sort((a,b)=>b.points-a.points||a.ms-b.ms);
+  const box=$('board');box.innerHTML='';
+  $('rh').textContent='👑 Host Dashboard · '+list.length+' submitted';
+  if(!list.length){box.textContent='No results yet.';return}
+  const medal=['🥇','🥈','🥉'];
+  list.forEach((x,i)=>{
+    const r=document.createElement('div');r.className='row'+(me.key&&keyOf(x.roll)===me.key?' me':'')+(i===0?' top1':'');
+    r.style.animationDelay=Math.min(i,15)*0.05+'s';
+    const rk=document.createElement('div');rk.className='rk';rk.textContent=medal[i]||('#'+(i+1));
+    const nm=document.createElement('div');nm.className='nm';nm.textContent=x.name;
+    const sm=document.createElement('small');sm.textContent=x.roll;nm.appendChild(sm);
+    const pt=document.createElement('div');pt.className='pt';pt.textContent=x.points;
+    const s2=document.createElement('small');s2.textContent=`${x.correct}/${x.total} · ${(x.ms/1000).toFixed(1)}s`;pt.appendChild(s2);
+    r.append(rk,nm,pt);box.appendChild(r);
+  });
+}
+</script></body></html>
